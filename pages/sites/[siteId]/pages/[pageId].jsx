@@ -46,7 +46,7 @@ export default function PageView() {
   const [savedPage, setSavedPage] = useState(null);
   const page = savedPage?.id === Number(pageId) ? savedPage : result.data;
   return <Shell crumbs={[['Sites', '/'], [site.data?.name || 'Site', `/sites/${siteId}`], [page?.name || 'Page']]} title={page?.name || 'Page'}
-    actions={page && <Stack direction="row" spacing={1} alignItems="center"><StatusChip status={page.status} /><LanguageChip language={page.language} /></Stack>}>
+    actions={page && <Stack direction="row" spacing={1} alignItems="center"><Button component={Link} href={`/sites/${siteId}/pages/new?source=${page.id}`} variant="outlined">Duplicate page</Button><StatusChip status={page.status} /><LanguageChip language={page.language} /></Stack>}>
     {result.loading && !page ? <Loading /> : result.error ? <Failure error={result.error} expired={result.expired} retry={() => setReload(v => v + 1)} /> : page && <>
       <Alert severity={page.status === 'Active' ? 'warning' : 'info'} sx={{ mb: 3 }}>
         {page.status === 'Active'
@@ -107,4 +107,5 @@ export default function PageView() {
     </>}
   </Shell>;
 }
+
 

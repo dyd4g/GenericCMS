@@ -26,7 +26,7 @@ export default function Pages() {
   const pages = useCms(siteId ? { resource: 'pages', siteId, search: term, language, status, sortBy, page } : null, reload);
   const rows = pages.data?.results || [], total = pages.data?.resultsCount ?? 0;
   return <Shell crumbs={[['Sites', '/'], [site.data?.name || 'Site']]} title={site.data?.name ? `${site.data.name} pages` : 'Pages'}
-    actions={<Button startIcon={<Refresh />} onClick={() => setReload(v => v + 1)} disabled={pages.loading}>Refresh</Button>}>
+    actions={<Stack direction="row" spacing={1}><Button component={Link} href={`/sites/${siteId}/pages/new`} variant="contained">New page</Button><Button startIcon={<Refresh />} onClick={() => setReload(v => v + 1)} disabled={pages.loading}>Refresh</Button></Stack>}>
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
         <TextField size="small" label="Search by page name or path" value={search} onChange={e => setSearch(e.target.value)} sx={{ flex: 1, minWidth: 240 }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><Search fontSize="small" /></InputAdornment> } }} />
@@ -57,3 +57,4 @@ export default function Pages() {
       </TableContainer>}
   </Shell>;
 }
+
