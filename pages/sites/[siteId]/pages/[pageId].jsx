@@ -8,6 +8,7 @@ import PagePreview from '../../../../components/PagePreview';
 import PageEditor from '../../../../components/PageEditor';
 import PageTranslations from '../../../../components/PageTranslations';
 import PageOrganizer from '../../../../components/PageOrganizer';
+import PageManagers from '../../../../components/PageManagers';
 import useCms from '../../../../components/useCms';
 import { Failure, formatDate, formatDateTime, LanguageChip, Loading, StatusChip } from '../../../../components/common';
 import { languageName } from '../../../../lib/config';
@@ -64,12 +65,14 @@ export default function PageView() {
           : 'This page is Inactive. Visitors cannot see it. You can edit and preview changes before making it Active.'}
       </Alert>
       <Paper variant="outlined">
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={tab} onChange={(_, v) => { if (!organizePending) setTab(v); }} variant="scrollable" sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
           <Tab value="edit" label="Edit page" disabled={organizePending} /><Tab value="translations" label="Languages" disabled={organizePending} /><Tab value="organize" label="Order and delete" /><Tab value="preview" label="Saved preview" disabled={organizePending} /><Tab value="html" label="HTML" disabled={organizePending} /><Tab value="css" label="Custom CSS" disabled={organizePending} /><Tab value="details" label="Details" disabled={organizePending} />
+          <Tab value="managers" label="Page managers" disabled={organizePending && tab !== 'managers'} />
         </Tabs>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ display: tab === 'edit' ? 'block' : 'none' }}><PageEditor key={`${siteId}-${page.id}-${editorRevision}`} page={page} siteId={siteId} onSaved={setSavedPage} onPending={setEditorPending} /></Box>
           {tab === 'organize' && <PageOrganizer key={page.id} siteId={siteId} page={page} blocked={editorPending} onPending={setOrganizePending} onUpdated={value => { setSavedPage(value); setEditorRevision(v => v + 1); }} onDeleted={() => setDeleted(true)} />}
+          {tab === 'managers' && <PageManagers key={page.id} siteId={siteId} page={page} blocked={editorPending} onPending={setOrganizePending} onUpdated={setSavedPage} />}
           {tab === 'translations' && <PageTranslations key={page.id} page={page} siteId={siteId} onRefresh={() => { setSavedPage(null); setReload(value => value + 1); }} />}
           {tab === 'preview' && <PagePreview page={page} />}
           {tab === 'html' && <Source label="HTML" text={page.content} />}
