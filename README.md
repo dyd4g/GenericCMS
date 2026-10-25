@@ -9,7 +9,7 @@ A new editor interface for the existing CMS API. Page editing uses the original 
 - A banner on every page explains that saving an Active page will change the live site immediately, because the CMS API keeps no drafts or history (see `GenericLMS/docs/cms-api-findings.md`).
 
 ## Not built (and why)
-- New-page creation, deletion, and dedicated relationship/image management are deferred. Existing relationships, publish dates and images are preserved during page saves.
+- General new-page creation, deletion, and dedicated relationship management are deferred. Existing relationships and publish dates are preserved during page saves.
 - Templates, headers, footers, stylesheets, scripts: the CMS API has no such models for HP LIFE.
 - Assets and Contacts: a separate feature set; not needed for pages.
 - Themes: deferred by decision.
@@ -30,6 +30,8 @@ The browser calls `/api/cms` on this app with its own bearer token for reads. Un
 The **Edit page** tab provides HTML, CSS, page settings and SEO editors plus an unsaved preview. Save is explicit. Saving an Active page requires confirmation because it changes the live site immediately. Unsaved navigation is guarded, failed saves retain edits, and expired sessions can be renewed in an editor sign-in dialog.
 
 The **Attributes** editor loads the site's existing `GET sites/{siteId}/pages/attributes` definitions. It supports required, single-selection, multiple-selection and nested attributes. Removing a parent selection clears its dependent selections. Selected value IDs are saved in the same dictionary on the existing page PUT; attribute definitions are not modified.
+
+The **Languages** tab lists all eight supported languages with current, available and missing states. Creating a missing language version re-reads the saved source on the server, then sends the existing `POST sites/{siteId}/pages` contract. The path, content, CSS, SEO, attributes and parent relationship are copied; status is Inactive and publish date is cleared. Featured images and page permissions are not copied. This is a manual translation starting point, not automatic translation. Creation requires site-admin access; the backend enforces permissions and path/language uniqueness. **Edit page → Compare languages** shows a saved reference title/HTML beside the editable current title/HTML. Unsaved edits stay in the editor when changing tabs and are guarded when switching page versions.
 
 **Images and files** opens a media dialog from the editor toolbar. Browse/search existing assets, view their files, and upload to a selected asset using the existing multipart `POST sites/{siteId}/assets/{assetId}/files`. Asset downloads have temporary private URLs and cannot be embedded as permanent page content. Permanent HTTP(S) URLs can be inserted as escaped image/file-link HTML at the current selection. Featured images use the existing multipart PUT / DELETE `sites/{siteId}/Pages/{pageId}/featuredImage` and take effect immediately after confirmation. Uploads are limited to 29 MB in this UI. No public general-purpose media-upload endpoint has been added.
 

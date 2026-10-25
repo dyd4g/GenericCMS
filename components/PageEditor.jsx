@@ -7,7 +7,7 @@ import PageMedia from './PageMedia';
 import useCms from './useCms';
 import { validateAttributes } from '../lib/page-attributes';
 import { cmsGet, cmsUpdatePage, saveSession, signInRequest } from '../lib/client';
-import { languages } from '../lib/config';
+import { languages, languageName } from '../lib/config';
 import { pagePayload, validatePage } from '../lib/page-edit';
 
 // Source editing preserves the custom markup used by existing HP LIFE pages.
@@ -20,6 +20,9 @@ export default function PageEditor({ page, siteId, onSaved }) {
   const [login, setLogin] = useState(false), [email, setEmail] = useState(''), [password, setPassword] = useState('');
   const [attributeReload, setAttributeReload] = useState(0);
   const attributeResult = useCms({ resource: 'pageAttributes', siteId }, attributeReload);
+  const [compareId, setCompareId] = useState('');
+  const [compareReload, setCompareReload] = useState(0);
+  const comparison = useCms(compareId ? { resource: 'page', siteId, pageId: compareId } : null, compareReload);
   const dirty = JSON.stringify(draft) !== baseline;
   useEffect(() => {
     if (!dirty && !busy) return;
@@ -70,7 +73,19 @@ export default function PageEditor({ page, siteId, onSaved }) {
       </Stack>
     </Stack>
     {error && <Alert severity="error" action={/session|sign in/i.test(error) ? <Button color="inherit" onClick={() => setLogin(true)}>Sign in</Button> : undefined}>{error}</Alert>}
-    <Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable"><Tab value="content" label="Content" /><Tab value="style" label="Custom CSS" /><Tab value="settings" label="Page settings" /><Tab value="attributes" label="Attributes" /><Tab value="preview" label="Preview changes" /></Tabs>
+    <Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable"><Tab value="content" label="Content" /><Tab value="style" label="Custom CSS" /><Tab value="settings" label="Page settings" /><Tab value="attributes" label="Attributes" /><Tab value="compare" label="Compare languages" /><Tab value="preview" label="Preview changes" /></Tabs>
+    {tab === 'compare' && <Stack spacing={2}>
+      <TextField select label="Reference language" value={compareId} onChange={e => setCompareId(e.target.value)} disabled={busy} fullWidth>
+        <MenuItem value="">Choose a language</MenuItem>{(page.translations || []).map(item => <MenuItem key={item.id} value={item.id}>{languageName(item.language)}</MenuItem>)}
+      </TextField>
+      {!page.translations?.length && <Alert severity="info">No other language versions exist yet. Create one in the Languages tab.</Alert>}
+      {comparison.loading && <Typography role="status">Loading reference page…</Typography>}
+      {comparison.error && <Alert severity="error" action={<Button onClick={() => setCompareReload(value => value + 1)}>Retry</Button>}>{comparison.error}</Alert>}
+      {comparison.data && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
+        <Stack spacing={2}><Typography variant="h6">{languageName(comparison.data.language)} reference (saved)</Typography><TextField label="Reference title" value={comparison.data.title || ''} slotProps={{ input: { readOnly: true }, htmlInput: { dir: comparison.data.language === 'ar' ? 'rtl' : 'ltr' } }} /><TextField label="Reference HTML" value={comparison.data.content || ''} multiline minRows={20} maxRows={35} slotProps={{ input: { readOnly: true, sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { dir: 'ltr', spellCheck: false } }} /></Stack>
+        <Stack spacing={2}><Typography variant="h6">{languageName(draft.language)} (editing)</Typography>{field('title', 'Page title')}{field('content', 'Page HTML', { inputRef: htmlInput, multiline: true, minRows: 20, maxRows: 35, slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { dir: 'ltr', spellCheck: false } } })}</Stack>
+      </Box>}
+    </Stack>}
     {tab === 'attributes' && <PageAttributes result={attributeResult} attributes={draft.attributes} onChange={value => change('attributes', value)} disabled={busy} retry={() => setAttributeReload(value => value + 1)} />}
     {tab === 'content' && <>{field('content', 'Page HTML', { inputRef: htmlInput, multiline: true, minRows: 20, maxRows: 35, helperText: 'Edit the existing HTML without changing its layout classes. Use Preview changes before saving.', slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { spellCheck: false, dir: 'ltr' } } })}</>}
     {tab === 'style' && field('style', 'Custom CSS', { multiline: true, minRows: 20, maxRows: 35, slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { spellCheck: false, dir: 'ltr' } } })}

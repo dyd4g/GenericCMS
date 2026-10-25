@@ -6,6 +6,7 @@ import { ContentCopy } from '@mui/icons-material';
 import Shell from '../../../../components/Shell';
 import PagePreview from '../../../../components/PagePreview';
 import PageEditor from '../../../../components/PageEditor';
+import PageTranslations from '../../../../components/PageTranslations';
 import useCms from '../../../../components/useCms';
 import { Failure, formatDate, formatDateTime, LanguageChip, Loading, StatusChip } from '../../../../components/common';
 import { languageName } from '../../../../lib/config';
@@ -54,10 +55,11 @@ export default function PageView() {
       </Alert>
       <Paper variant="outlined">
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tab value="edit" label="Edit page" /><Tab value="preview" label="Saved preview" /><Tab value="html" label="HTML" /><Tab value="css" label="Custom CSS" /><Tab value="details" label="Details" />
+          <Tab value="edit" label="Edit page" /><Tab value="translations" label="Languages" /><Tab value="preview" label="Saved preview" /><Tab value="html" label="HTML" /><Tab value="css" label="Custom CSS" /><Tab value="details" label="Details" />
         </Tabs>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           <Box sx={{ display: tab === 'edit' ? 'block' : 'none' }}><PageEditor key={`${siteId}-${page.id}`} page={page} siteId={siteId} onSaved={setSavedPage} /></Box>
+          {tab === 'translations' && <PageTranslations key={page.id} page={page} siteId={siteId} onRefresh={() => { setSavedPage(null); setReload(value => value + 1); }} />}
           {tab === 'preview' && <PagePreview page={page} />}
           {tab === 'html' && <Source label="HTML" text={page.content} />}
           {tab === 'css' && <Source label="CSS" text={page.style} />}
