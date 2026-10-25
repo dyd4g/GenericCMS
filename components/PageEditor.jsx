@@ -12,7 +12,7 @@ import { languages, languageName } from '../lib/config';
 import { pagePayload, validatePage } from '../lib/page-edit';
 
 // Source editing preserves the custom markup used by existing HP LIFE pages.
-export default function PageEditor({ page, siteId, onSaved, isNew = false }) {
+export default function PageEditor({ page, siteId, onSaved, isNew = false, onPending }) {
   const router = useRouter();
   const htmlInput = useRef(null);
   const [draft, setDraft] = useState(() => pagePayload(page));
@@ -25,6 +25,7 @@ export default function PageEditor({ page, siteId, onSaved, isNew = false }) {
   const [compareReload, setCompareReload] = useState(0);
   const comparison = useCms(compareId ? { resource: 'page', siteId, pageId: compareId } : null, compareReload);
   const dirty = JSON.stringify(draft) !== baseline;
+  useEffect(() => { onPending?.(dirty || busy); return () => onPending?.(false); }, [dirty, busy, onPending]);
   useEffect(() => {
     if (!dirty && !busy) return;
     const unload = e => { e.preventDefault(); e.returnValue = ''; };

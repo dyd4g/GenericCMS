@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Alert, Box, Button, Chip, Divider, Paper, Stack, Tab, Tabs, Tooltip, Typography } from '@mui/material';
@@ -7,6 +7,7 @@ import Shell from '../../../../components/Shell';
 import PagePreview from '../../../../components/PagePreview';
 import PageEditor from '../../../../components/PageEditor';
 import PageTranslations from '../../../../components/PageTranslations';
+import PageOrganizer from '../../../../components/PageOrganizer';
 import useCms from '../../../../components/useCms';
 import { Failure, formatDate, formatDateTime, LanguageChip, Loading, StatusChip } from '../../../../components/common';
 import { languageName } from '../../../../lib/config';
@@ -38,13 +39,22 @@ function Links({ items, siteId, empty = '—' }) {
 }
 
 export default function PageView() {
-  const { query } = useRouter();
+  const router = useRouter();
+  const { query } = router;
   const { siteId, pageId } = query;
   const [tab, setTab] = useState('preview'), [reload, setReload] = useState(0);
   const site = useCms(siteId ? { resource: 'site', siteId } : null);
   const result = useCms(siteId && pageId ? { resource: 'page', siteId, pageId } : null, reload);
   const [savedPage, setSavedPage] = useState(null);
+  const [editorPending, setEditorPending] = useState(false), [organizePending, setOrganizePending] = useState(false), [editorRevision, setEditorRevision] = useState(0), [deleted, setDeleted] = useState(false);
+  useEffect(() => { if (!organizePending) return;
+    const unload = e => { e.preventDefault(); e.returnValue = ''; };
+    const route = () => { if (!window.confirm('Leave this page? Order changes may not be saved.')) { router.events.emit('routeChangeError'); throw new Error('Navigation cancelled.'); } };
+    window.addEventListener('beforeunload', unload); router.events.on('routeChangeStart', route);
+    return () => { window.removeEventListener('beforeunload', unload); router.events.off('routeChangeStart', route); };
+  }, [organizePending, router]);
   const page = savedPage?.id === Number(pageId) ? savedPage : result.data;
+  if (deleted) return <Shell title="Page deleted"><Alert severity="success" action={<Button component={Link} href={`/sites/${siteId}`}>Back to pages</Button>}>The page was deleted. Other language versions remain; its child pages are now top-level pages.</Alert></Shell>;
   return <Shell crumbs={[['Sites', '/'], [site.data?.name || 'Site', `/sites/${siteId}`], [page?.name || 'Page']]} title={page?.name || 'Page'}
     actions={page && <Stack direction="row" spacing={1} alignItems="center"><Button component={Link} href={`/sites/${siteId}/pages/new?source=${page.id}`} variant="outlined">Duplicate page</Button><StatusChip status={page.status} /><LanguageChip language={page.language} /></Stack>}>
     {result.loading && !page ? <Loading /> : result.error ? <Failure error={result.error} expired={result.expired} retry={() => setReload(v => v + 1)} /> : page && <>
@@ -55,10 +65,11 @@ export default function PageView() {
       </Alert>
       <Paper variant="outlined">
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tab value="edit" label="Edit page" /><Tab value="translations" label="Languages" /><Tab value="preview" label="Saved preview" /><Tab value="html" label="HTML" /><Tab value="css" label="Custom CSS" /><Tab value="details" label="Details" />
+          <Tab value="edit" label="Edit page" disabled={organizePending} /><Tab value="translations" label="Languages" disabled={organizePending} /><Tab value="organize" label="Order and delete" /><Tab value="preview" label="Saved preview" disabled={organizePending} /><Tab value="html" label="HTML" disabled={organizePending} /><Tab value="css" label="Custom CSS" disabled={organizePending} /><Tab value="details" label="Details" disabled={organizePending} />
         </Tabs>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
-          <Box sx={{ display: tab === 'edit' ? 'block' : 'none' }}><PageEditor key={`${siteId}-${page.id}`} page={page} siteId={siteId} onSaved={setSavedPage} /></Box>
+          <Box sx={{ display: tab === 'edit' ? 'block' : 'none' }}><PageEditor key={`${siteId}-${page.id}-${editorRevision}`} page={page} siteId={siteId} onSaved={setSavedPage} onPending={setEditorPending} /></Box>
+          {tab === 'organize' && <PageOrganizer key={page.id} siteId={siteId} page={page} blocked={editorPending} onPending={setOrganizePending} onUpdated={value => { setSavedPage(value); setEditorRevision(v => v + 1); }} onDeleted={() => setDeleted(true)} />}
           {tab === 'translations' && <PageTranslations key={page.id} page={page} siteId={siteId} onRefresh={() => { setSavedPage(null); setReload(value => value + 1); }} />}
           {tab === 'preview' && <PagePreview page={page} />}
           {tab === 'html' && <Source label="HTML" text={page.content} />}
