@@ -56,7 +56,7 @@ export default function Shell({ crumbs = [], title, actions, children }) {
           <Typography variant="h6" sx={{ display: { xs: 'none', sm: 'block' } }}>Content Manager</Typography>
         </Link>
         <Chip label={connection.name} size="small" variant="outlined" sx={{ ml: 1 }} />
-        <Chip label="Read-only" size="small" color="warning" sx={{ bgcolor: 'warning.light', color: 'warning.main' }} />
+        
         <Box sx={{ flex: 1 }} />
         {user?.name && <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' } }}>Signed in as {user.name}{user.roles.length ? ` (${user.roles.join(', ')})` : ''}</Typography>}
         <Button startIcon={<Logout />} onClick={() => { clearSession(); setState('out'); }}>Sign out</Button>
@@ -72,3 +72,4 @@ export default function Shell({ crumbs = [], title, actions, children }) {
     </Container>
   </Box>;
 }
+

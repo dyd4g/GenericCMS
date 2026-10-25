@@ -5,6 +5,7 @@ import { Alert, Box, Button, Chip, Divider, Paper, Stack, Tab, Tabs, Tooltip, Ty
 import { ContentCopy } from '@mui/icons-material';
 import Shell from '../../../../components/Shell';
 import PagePreview from '../../../../components/PagePreview';
+import PageEditor from '../../../../components/PageEditor';
 import useCms from '../../../../components/useCms';
 import { Failure, formatDate, formatDateTime, LanguageChip, Loading, StatusChip } from '../../../../components/common';
 import { languageName } from '../../../../lib/config';
@@ -41,20 +42,22 @@ export default function PageView() {
   const [tab, setTab] = useState('preview'), [reload, setReload] = useState(0);
   const site = useCms(siteId ? { resource: 'site', siteId } : null);
   const result = useCms(siteId && pageId ? { resource: 'page', siteId, pageId } : null, reload);
-  const page = result.data;
+  const [savedPage, setSavedPage] = useState(null);
+  const page = savedPage?.id === Number(pageId) ? savedPage : result.data;
   return <Shell crumbs={[['Sites', '/'], [site.data?.name || 'Site', `/sites/${siteId}`], [page?.name || 'Page']]} title={page?.name || 'Page'}
     actions={page && <Stack direction="row" spacing={1} alignItems="center"><StatusChip status={page.status} /><LanguageChip language={page.language} /></Stack>}>
     {result.loading && !page ? <Loading /> : result.error ? <Failure error={result.error} expired={result.expired} retry={() => setReload(v => v + 1)} /> : page && <>
       <Alert severity={page.status === 'Active' ? 'warning' : 'info'} sx={{ mb: 3 }}>
         {page.status === 'Active'
-          ? 'This page is Active, so visitors can see it. This version of the CMS is read-only. When editing is added, saving an Active page will change the live site right away, because the CMS keeps no drafts or history.'
-          : 'This page is Inactive, so visitors cannot see it. This version of the CMS is read-only.'}
+          ? 'This page is Active. Saving changes updates the live site immediately. Preview your changes before saving.'
+          : 'This page is Inactive. Visitors cannot see it. You can edit and preview changes before making it Active.'}
       </Alert>
       <Paper variant="outlined">
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Tab value="preview" label="Preview" /><Tab value="html" label="HTML" /><Tab value="css" label="Custom CSS" /><Tab value="details" label="Details" />
+          <Tab value="edit" label="Edit page" /><Tab value="preview" label="Saved preview" /><Tab value="html" label="HTML" /><Tab value="css" label="Custom CSS" /><Tab value="details" label="Details" />
         </Tabs>
         <Box sx={{ p: { xs: 2, md: 3 } }}>
+          <Box sx={{ display: tab === 'edit' ? 'block' : 'none' }}><PageEditor key={`${siteId}-${page.id}`} page={page} siteId={siteId} onSaved={setSavedPage} /></Box>
           {tab === 'preview' && <PagePreview page={page} />}
           {tab === 'html' && <Source label="HTML" text={page.content} />}
           {tab === 'css' && <Source label="CSS" text={page.style} />}
@@ -102,3 +105,4 @@ export default function PageView() {
     </>}
   </Shell>;
 }
+

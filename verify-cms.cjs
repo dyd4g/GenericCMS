@@ -6,7 +6,7 @@ function load(file, reqs = {}) {
   return m.exports;
 }
 (async () => {
-  const config = load('lib/config.js'); const server = load('lib/server.js', { './config': config });
+  const config = load('lib/config.js'); const server = load('lib/server.js', { './config': config, './page-edit': load('lib/page-edit.js') });
   const base = 'https://api.hplife-test.dyd.solutions/cms';
   // Read paths: only validated, known shapes reach the CMS.
   assert.equal(server.cmsReadPath({ resource: 'sites' }), 'sites');
@@ -60,3 +60,4 @@ function load(file, reqs = {}) {
   assert.equal((await run(session, { method: 'POST', headers: { host: 'a.test', origin: 'http://a.test', 'content-type': 'text/plain' }, body: {} })).status, 415);
   console.log('CMS read paths, proxy limits, sign-in contract and route guards passed. No real requests issued.');
 })().catch(e => { console.error(e); process.exit(1); });
+
