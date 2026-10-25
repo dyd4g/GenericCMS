@@ -6,13 +6,13 @@ import { loadPageGroup, movePage, persistPageOrder } from '../lib/page-organize'
 import { languageName } from '../lib/config';
 
 export default function PageOrganizer({ siteId, page, blocked, onUpdated, onDeleted, onPending }) {
-  const [mode, setMode] = useState('siblings'), [rows, setRows] = useState([]), [baseline, setBaseline] = useState(''), [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [mode, setMode] = useState('children'), [rows, setRows] = useState([]), [baseline, setBaseline] = useState('[]'), [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
   const [reload, setReload] = useState(0), [remove, setRemove] = useState(false), [name, setName] = useState('');
   const drag = useRef(null);
   const [warning, setWarning] = useState('');
   const dirty = JSON.stringify(rows.map(item => item.id)) !== baseline;
   useEffect(() => { let alive = true; setLoading(true); setError('');
-    loadPageGroup(siteId, page, mode === 'children', cmsGet).then(items => { if (alive) { setRows(items); setBaseline(JSON.stringify(items.map(item => item.id))); } }).catch(e => { if (alive) setError(e.message); }).finally(() => { if (alive) setLoading(false); });
+    loadPageGroup(siteId, page, mode === 'children', cmsGet).then(items => { if (alive) { setRows(items); setBaseline(JSON.stringify(items.map(item => item.id))); if (reload > 0 && mode === 'siblings') { const current = items.find(item => item.id === page.id); if (current) onUpdated(current); } } }).catch(e => { if (alive) { setError(e.message); setRows([]); setBaseline('[]'); } }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [siteId, page.id, mode, reload]);
   useEffect(() => { onPending((dirty && !loading) || busy); return () => onPending(false); }, [dirty, loading, busy, onPending]);

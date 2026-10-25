@@ -12,6 +12,9 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
   const read = async query => { reads.push(query); if (query.resource === 'pages') return { pagesCount: 2, results: query.page ? [{ id: 3 }] : [{ id: 1 }, { id: 2 }] }; return { id: query.pageId, order: query.pageId, parent: query.pageId === 3 ? { id: 1 } : null }; };
   assert.deepEqual((await organize.loadPageGroup(1, current, false, read)).map(item => item.id), [1, 2]); assert.equal(reads.some(query => query.pageId === 999), false);
   assert.deepEqual((await organize.loadPageGroup(1, current, true, read)).map(item => item.id), [3]);
+  let groupCalls = []; await organize.loadPageGroup(1, current, true, async query => { groupCalls.push(query); return read(query); });
+  assert.equal(groupCalls.some(query => query.resource === 'pages'), false); // Child ordering does not scan the entire site.
+  groupCalls = []; assert.deepEqual(await organize.loadPageGroup(1, { id: 9, children: [] }, true, async query => { groupCalls.push(query); }), []); assert.equal(groupCalls.length, 0);
   assert.equal(organize.pageActionPath({ siteId: 1, pageId: 12 }, 'PUT', 3), 'sites/1/Pages/12/order');
   assert.equal(organize.pageActionPath({ siteId: 1, pageId: 12 }, 'DELETE'), 'sites/1/Pages/12');
   assert.throws(() => organize.pageActionPath({ siteId: 1, pageId: '../12' }, 'DELETE'));

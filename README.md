@@ -1,5 +1,7 @@
 # GenericCMS (HP LIFE content manager, first slice)
 
+Latest workflow checks and remaining live-verification gaps: [October 25 QA record](docs/page-workflow-qa-2026-10-25.md).
+
 A new editor interface for the existing CMS API. Page editing uses the original CMS update contract; the backend and existing apps are unchanged.
 
 ## What exists now

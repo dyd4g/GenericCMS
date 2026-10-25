@@ -9,7 +9,7 @@ import useCms from './useCms';
 import { validateAttributes } from '../lib/page-attributes';
 import { cmsCreatePage, cmsGet, cmsUpdatePage, saveSession, signInRequest } from '../lib/client';
 import { languages, languageName } from '../lib/config';
-import { pagePayload, validatePage } from '../lib/page-edit';
+import { pagePayload, savedPageView, validatePage } from '../lib/page-edit';
 
 // Source editing preserves the custom markup used by existing HP LIFE pages.
 export default function PageEditor({ page, siteId, onSaved, isNew = false, onPending }) {
@@ -53,14 +53,14 @@ export default function PageEditor({ page, siteId, onSaved, isNew = false, onPen
       setBaseline(JSON.stringify(draft));
       // Re-read server-generated fields, such as the publish date, after a successful PUT.
       try { const saved = await cmsGet({ resource: 'page', siteId, pageId: page.id }); const value = pagePayload(saved); setDraft(value); setBaseline(JSON.stringify(value)); onSaved(saved); }
-      catch { onSaved({ ...page, ...draft }); }
+      catch { onSaved(savedPageView(page, draft, attributeResult.data)); setError('Changes were saved, but the page could not be reloaded. Refresh when the connection is available.'); }
     } catch (e) { setError(e.message); if (/session|sign in/i.test(e.message)) setLogin(true); }
     finally { setBusy(false); }
   }
   return <Stack spacing={2}>
-    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} sx={{ position: 'sticky', top: 64, zIndex: 2, bgcolor: 'background.paper', py: 1.5 }}>
+    <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'stretch', md: 'center' }} justifyContent="space-between" spacing={2} sx={{ position: 'sticky', top: 64, zIndex: 2, bgcolor: 'background.paper', py: 1.5 }}>
       <Typography variant="body2" color="text.secondary">{busy ? 'Saving…' : dirty ? 'Unsaved changes' : 'Page editor'}</Typography>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" gap={1} flexWrap="wrap" useFlexGap>
         {!isNew && <PageMedia siteId={siteId} page={page} busy={busy} setBusy={setBusy} onSessionError={message => { setError(message); setLogin(true); }}
           onFeatured={featuredImageUrl => onSaved({ ...page, featuredImageUrl })}
           onInsert={markup => {
@@ -106,7 +106,7 @@ export default function PageEditor({ page, siteId, onSaved, isNew = false, onPen
       {['description', 'keywords'].map(key => <TextField key={key} fullWidth label={key === 'description' ? 'SEO description' : 'SEO keywords'} value={draft.seo[key] ?? ''} disabled={busy} onChange={e => setDraft(d => ({ ...d, seo: { ...d.seo, [key]: e.target.value } }))} />)}
       <Typography variant="body2" color="text.secondary">Edit page attributes in the Attributes tab. {isNew ? 'Create the page before uploading a featured image.' : 'The publish date and featured image are preserved when saving.'}</Typography>
     </Stack>}
-    {tab === 'preview' && <PagePreview page={{ ...page, ...draft }} />}
+    {tab === 'preview' && <PagePreview page={{ ...page, ...draft }} unsaved />}
     <Dialog open={confirm} onClose={() => setConfirm(false)}><DialogTitle>Save changes to the live site?</DialogTitle><DialogContent><Typography>{draft.status === 'Inactive' ? 'This will hide the page from visitors.' : 'Visitors will see these changes immediately. The CMS does not keep a previous version.'}</Typography></DialogContent><DialogActions><Button onClick={() => setConfirm(false)}>Keep editing</Button><Button variant="contained" onClick={save}>Save changes</Button></DialogActions></Dialog>
     <Dialog open={login} onClose={() => !busy && setLogin(false)}><DialogTitle>Sign in to save your edits</DialogTitle><DialogContent><Stack component="form" id="editor-sign-in" spacing={2} sx={{ pt: 1 }} onSubmit={async e => { e.preventDefault(); setBusy(true); try { const result = await signInRequest(email, password); saveSession(result.accessToken, result.expiresIn, result.user); setPassword(''); setLogin(false); setError(''); } catch (err) { setError(err.message); } finally { setBusy(false); } }}><Typography>Your unsaved edits stay here while you sign in.</Typography>{error && <Alert severity="error">{error}</Alert>}<TextField label="Email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /><TextField label="Password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></Stack></DialogContent><DialogActions><Button disabled={busy} onClick={() => setLogin(false)}>Cancel</Button><Button disabled={busy} type="submit" form="editor-sign-in">Sign in</Button></DialogActions></Dialog>
   </Stack>;
