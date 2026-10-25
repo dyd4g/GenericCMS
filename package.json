@@ -1,0 +1,29 @@
+{
+  "name": "generic-cms",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1 -p 3021",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1 -p 3021",
+    "serve": "next build && next start -H 127.0.0.1 -p 3021",
+    "test": "node run-tests.cjs"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "11.14.0",
+    "@emotion/server": "^11.11.0",
+    "@emotion/styled": "11.14.0",
+    "@mui/icons-material": "7.3.7",
+    "@mui/material": "7.3.7",
+    "@mui/material-nextjs": "^7.3.7",
+    "next": "15.5.28",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.23"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
