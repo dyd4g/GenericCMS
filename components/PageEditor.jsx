@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, Tab, Tabs, TextField, Typography } from '@mui/material';
 import PagePreview from './PagePreview';
+import CodeEditor from './CodeEditor';
+import SourceWorkspace from './SourceWorkspace';
 import PageAttributes from './PageAttributes';
 import PageMedia from './PageMedia';
 import ParentPagePicker from './ParentPagePicker';
@@ -15,6 +17,7 @@ import { pagePayload, savedPageView, validatePage } from '../lib/page-edit';
 export default function PageEditor({ page, siteId, onSaved, isNew = false, onPending }) {
   const router = useRouter();
   const htmlInput = useRef(null);
+  const htmlState = useRef(null), cssState = useRef(null);
   const [draft, setDraft] = useState(() => pagePayload(page));
   const [baseline, setBaseline] = useState(() => JSON.stringify(pagePayload(page)));
   const [tab, setTab] = useState(isNew ? 'settings' : 'content'), [busy, setBusy] = useState(false), [error, setError] = useState(''), [confirm, setConfirm] = useState(false);
@@ -64,6 +67,7 @@ export default function PageEditor({ page, siteId, onSaved, isNew = false, onPen
         {!isNew && <PageMedia siteId={siteId} page={page} busy={busy} setBusy={setBusy} onSessionError={message => { setError(message); setLogin(true); }}
           onFeatured={featuredImageUrl => onSaved({ ...page, featuredImageUrl })}
           onInsert={markup => {
+            if (htmlInput.current?.insert) { htmlInput.current.insert(`\n${markup}\n`); setTab('content'); return; }
             const start = htmlInput.current?.selectionStart ?? draft.content.length;
             const end = htmlInput.current?.selectionEnd ?? start;
             const insert = `\n${markup}\n`;
@@ -85,13 +89,13 @@ export default function PageEditor({ page, siteId, onSaved, isNew = false, onPen
       {comparison.loading && <Typography role="status">Loading reference page…</Typography>}
       {comparison.error && <Alert severity="error" action={<Button onClick={() => setCompareReload(value => value + 1)}>Retry</Button>}>{comparison.error}</Alert>}
       {comparison.data && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3 }}>
-        <Stack spacing={2}><Typography variant="h6">{languageName(comparison.data.language)} reference (saved)</Typography><TextField label="Reference title" value={comparison.data.title || ''} slotProps={{ input: { readOnly: true }, htmlInput: { dir: comparison.data.language === 'ar' ? 'rtl' : 'ltr' } }} /><TextField label="Reference HTML" value={comparison.data.content || ''} multiline minRows={20} maxRows={35} slotProps={{ input: { readOnly: true, sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { dir: 'ltr', spellCheck: false } }} /></Stack>
-        <Stack spacing={2}><Typography variant="h6">{languageName(draft.language)} (editing)</Typography>{field('title', 'Page title')}{field('content', 'Page HTML', { inputRef: htmlInput, multiline: true, minRows: 20, maxRows: 35, slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { dir: 'ltr', spellCheck: false } } })}</Stack>
+        <Stack spacing={2}><Typography variant="h6">{languageName(comparison.data.language)} reference (saved)</Typography><TextField label="Reference title" value={comparison.data.title || ''} slotProps={{ input: { readOnly: true }, htmlInput: { dir: comparison.data.language === 'ar' ? 'rtl' : 'ltr' } }} /><CodeEditor label="Reference HTML" value={comparison.data.content || ''} readOnly /></Stack>
+        <Stack spacing={2}><Typography variant="h6">{languageName(draft.language)} (editing)</Typography>{field('title', 'Page title')}<CodeEditor ref={htmlInput} label="Page HTML" value={draft.content} onChange={value => change('content', value)} disabled={busy} stateCache={htmlState} /></Stack>
       </Box>}
     </Stack>}
     {tab === 'attributes' && <PageAttributes result={attributeResult} attributes={draft.attributes} onChange={value => change('attributes', value)} disabled={busy} retry={() => setAttributeReload(value => value + 1)} />}
-    {tab === 'content' && <>{field('content', 'Page HTML', { inputRef: htmlInput, multiline: true, minRows: 20, maxRows: 35, helperText: 'Edit the existing HTML without changing its layout classes. Use Preview changes before saving.', slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { spellCheck: false, dir: 'ltr' } } })}</>}
-    {tab === 'style' && field('style', 'Custom CSS', { multiline: true, minRows: 20, maxRows: 35, slotProps: { input: { sx: { fontFamily: 'Consolas, monospace', fontSize: 14 } }, htmlInput: { spellCheck: false, dir: 'ltr' } } })}
+    {tab === 'content' && <SourceWorkspace ref={htmlInput} value={draft.content} onChange={value => change('content', value)} language="html" label="Page HTML" disabled={busy} stateCache={htmlState} page={{ ...page, ...draft }} />}
+    {tab === 'style' && <SourceWorkspace value={draft.style || ''} onChange={value => change('style', value)} language="css" label="Custom CSS" disabled={busy} stateCache={cssState} page={{ ...page, ...draft }} />}
     {tab === 'settings' && <Stack spacing={3}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
         {field('name', 'Page name', { required: true })}{field('path', 'Page path', { helperText: 'Changing the path can break existing links.' })}

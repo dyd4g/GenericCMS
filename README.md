@@ -4,6 +4,8 @@ Latest workflow checks and remaining live-verification gaps: [October 25 QA reco
 
 A new editor interface for the existing CMS API. Page editing uses the original CMS update contract; the backend and existing apps are unchanged.
 
+HTML and CSS editing uses CodeMirror with syntax highlighting, line numbers, folding, completion, undo/redo, indentation tools and find/replace. **Code and preview** displays the unsaved preview alongside the editor on wide screens (stacked on mobile); **Expand editor** opens a larger workspace. Source strings are not automatically formatted or serialized through the DOM. History and selection are retained when switching editor tabs or expanding. The language comparison reference is read-only and uses the same syntax-highlighted editor. Media insertion still uses the HTML cursor selection and all saves use the unchanged CMS contracts.
+
 ## What exists now
 - **Sign in** with the existing identity account (the same one the old CMS uses). The session lives in the browser tab only.
 - **Sites** list, then a **Pages** list for a site: search by name or path, filter by language and status, sort by name or newest, 10 per page, with the feature-scope attribute shown.

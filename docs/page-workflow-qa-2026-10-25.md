@@ -41,3 +41,9 @@ These mocked checks are not equivalent to real restricted-user sign-in or pixel-
 - Full visual comparison of every page in all eight languages is still outstanding; English/Arabic preview paths were exercised here.
 - Asset-library file upload was not exercised against an existing asset, to avoid adding files to real asset records. The multipart contract is tested with mocks; featured-image upload was tested live.
 - Uploaded blob deletion timing remains controlled by the existing backend cleanup job; page cleanup does not claim immediate physical blob removal.
+
+## HTML editor follow-up
+
+The CodeMirror HTML/CSS workspace was checked on existing Simplified Chinese page 19 without saving any page data. Opening it retained the original 3,581 HTML characters and left Save changes disabled. Find located `HP LIFE`; a single unsaved replacement updated the live preview. Switching to the 19,928-character CSS source and back preserved HTML undo history. Undo restored the exact original document and disabled Save changes again. Expanding and closing the workspace retained history and selection. The browser was refreshed after testing to clear the test-only redo entry.
+
+The tenth automated suite checks raw HTML/CSS preservation, multilingual text and entities, large source documents, undo/redo, history retention during remount reconfiguration, and external document synchronization. No formatting, DOM serialization, API contract changes, or page-content writes were introduced by this editor enhancement.
